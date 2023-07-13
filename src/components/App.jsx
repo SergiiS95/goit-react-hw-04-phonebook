@@ -1,21 +1,19 @@
-
 import React from 'react';
-import { Component } from 'react';
+import { useState, useEffect } from 'react';
 import { nanoid } from 'nanoid';
 import { ContactForm } from './ContactForm/ContactForm';
 import { Filter } from './Filter/Filter';
 import { ContactList } from './ContactList/ContactList';
 import css from './App.module.css';
 
+export const App = () => {
+  const [contacts, setContacts] = useState(
+    () => JSON.parse(localStorage.getItem('contacts')) ?? []
+  );
+  const [filter, setFilter] = useState('');
 
-export class App extends Component {
-  state = {
-    contacts: [],
-    filter: '',
-  };
-
-  onAddContact = contactData => {
-    const isExist = this.state.contacts.some(
+  const onAddContact = contactData => {
+    const isExist = contacts.some(
       contact => contactData.name.toLowerCase() === contact.name.toLowerCase()
     );
     if (isExist) {
@@ -27,56 +25,37 @@ export class App extends Component {
       id: nanoid(3),
       ...contactData,
     };
-    this.setState(prevState => ({
-      contacts: [finalContact, ...prevState.contacts],
-    }));
+    setContacts(prevContacts => [finalContact, ...prevContacts]);
   };
 
-  handleFilter = e => {
-    this.setState({ filter: e.target.value });
+  const handleFilter = e => {
+    setFilter(e.target.value);
   };
 
-  onDeleteContact = id => {
-    this.setState(prevState => ({
-      contacts: prevState.contacts.filter(contact => contact.id !== id),
-    }));
+  const onDeleteContact = id => {
+    setContacts(prevState => prevState.filter(contact => contact.id !== id));
   };
 
-  getVisibleFilter = () => {
-    const { filter, contacts } = this.state;
+  const getVisibleFilter = () => {
     return contacts.filter(({ name }) =>
       name.toLowerCase().includes(filter.toLowerCase())
     );
   };
 
-  componentDidMount() {
-    console.log("render componentdidmount")
-    const stringifiedContacts = localStorage.getItem('contacts');
-    const contacts = JSON.parse(stringifiedContacts) ?? [];
-    this.setState({ contacts });
-  }
+  useEffect(() => {
+    localStorage.setItem('contacts', JSON.stringify(contacts));
+  }, [contacts]);
 
-  componentDidUpdate(prevProps, prevState) {
-
-    console.log('render componentDidUpdate');
-    if (prevState.contacts.length !== this.state.contacts.length) {
-      const stringifiedContacts = JSON.stringify(this.state.contacts);
-      localStorage.setItem('contacts', stringifiedContacts);
-    }
-  }
-
-  render() {
-    return (
-      <div className={css.container}>
-        <h1 className={css.title}>Phonebook</h1>
-        <ContactForm onAddContact={this.onAddContact} />
-        <h2 className={css.titleContact}>Contacts</h2>
-        <Filter value={this.state.filter} handleFilter={this.handleFilter} />
-        <ContactList
-          contacts={this.getVisibleFilter()}
-          onDeleteContact={this.onDeleteContact}
-        />
-      </div>
-    );
-  }
-}
+  return (
+    <div className={css.container}>
+      <h1 className={css.title}>Phonebook</h1>
+      <ContactForm onAddContact={onAddContact} />
+      <h2 className={css.titleContact}>Contacts</h2>
+      <Filter value={filter} handleFilter={handleFilter} />
+      <ContactList
+        contacts={getVisibleFilter()}
+        onDeleteContact={onDeleteContact}
+      />
+    </div>
+  );
+};
